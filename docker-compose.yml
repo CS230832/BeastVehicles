@@ -1,0 +1,16 @@
+services:
+    db:
+        container_name: db
+        image: mysql:latest
+        restart: always
+        env_file:
+            - .env
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: ${DB_NAME}
+            MYSQL_USER: ${DB_USER}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+        ports:
+            - "${DB_PORT}:${DB_PORT}"
+        volumes:
+            - ./mysql:/var/lib/mysql
