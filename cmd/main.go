@@ -7,13 +7,14 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-
-	"github.com/go-sql-driver/mysql"
 )
 
 func main() {
-	db, err := db.NewMySQLStorage(mysql.Config{
-		User: config.Envs.DBUser,
+	db, err := db.NewPostgresStorage(db.Config{
+		Address:  config.Envs.DBAddress,
+		Database: config.Envs.DBName,
+		User:     config.Envs.DBUser,
+		Password: config.Envs.DBPassword,
 	})
 
 	if err != nil {
