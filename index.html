@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <link href="/node_modules/primeicons/primeicons.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      function toggleMode() {
+        const body = document.body
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        const isDarkMode = darkModeMediaQuery.matches
+
+        if (isDarkMode) {
+          body.style.backgroundColor = '#374151'
+        } else {
+          body.style.backgroundColor = '#fff'
+        }
+      }
+
+      toggleMode()
+
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', toggleMode)
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
