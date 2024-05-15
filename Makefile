@@ -5,7 +5,7 @@ test:
 	@go test -v ./...
 
 run: build
-	@./bin/app
+	@./bin/app.exe
 
 migration:
 	@migrate create -ext sql -dir cmd/migrate/migrations $(filter-out $@,$(MAKECMDGOALS))

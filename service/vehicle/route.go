@@ -1,6 +1,7 @@
 package vehicle
 
 import (
+	"CS230832/BeastVehicles/service/auth"
 	"CS230832/BeastVehicles/types"
 	"CS230832/BeastVehicles/utils"
 	"fmt"
@@ -17,13 +18,20 @@ func NewHandler(store types.VehicleStore) *Handler {
 	return &Handler{store: store}
 }
 
-func (h *Handler) RegisterRoutes(router *mux.Router) {
-	router.HandleFunc("/vehicle", h.AddVehicle).Methods(http.MethodPost)
-	router.HandleFunc("/vehicle/{wincode}", h.RemoveVehicle).Methods(http.MethodDelete)
-	router.HandleFunc("/vehicle/{wincode}", h.GetVehicle).Methods(http.MethodGet)
+func (h *Handler) RegisterRoutes(router *mux.Router, store types.AdminStore) {
+	router.HandleFunc("/vehicle", auth.WithJWTAuth(h.addVehicle, store)).Methods(http.MethodPost)
+	router.HandleFunc("/vehicle/{wincode}", auth.WithJWTAuth(h.removeVehicle, store)).Methods(http.MethodDelete)
+	router.HandleFunc("/vehicle/{wincode}", h.getVehicle).Methods(http.MethodGet)
 }
 
-func (h *Handler) AddVehicle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) addVehicle(w http.ResponseWriter, r *http.Request) {
+	_, ok := utils.FromContext(r.Context())
+
+	if !ok {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("only admins cand add a vehicle"))
+		return
+	}
+
 	var payload types.VehiclePayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
@@ -41,8 +49,20 @@ func (h *Handler) AddVehicle(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, result)
 }
 
-func (h *Handler) RemoveVehicle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) removeVehicle(w http.ResponseWriter, r *http.Request) {
+	_, ok := utils.FromContext(r.Context())
+
+	if !ok {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("only admins cand add a vehicle"))
+		return
+	}
+
 	wincode := mux.Vars(r)["wincode"]
+
+	if len(wincode) == 0 {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("wincode cannot be empty"))
+		return
+	}
 
 	result, err := h.store.RemoveVehicle(wincode)
 
@@ -54,7 +74,7 @@ func (h *Handler) RemoveVehicle(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, result)
 }
 
-func (h *Handler) GetVehicle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getVehicle(w http.ResponseWriter, r *http.Request) {
 	wincode := mux.Vars(r)["wincode"]
 
 	result, err := h.store.GetVehicle(wincode)

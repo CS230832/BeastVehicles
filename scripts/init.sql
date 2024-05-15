@@ -2,6 +2,8 @@ DROP TABLE IF EXISTS Parking;
 DROP TABLE IF EXISTS Block;
 DROP TABLE IF EXISTS Slot;
 DROP TABLE IF EXISTS Vehicle;
+DROP TABLE IF EXISTS Admins;
+DROP TABLE IF EXISTS Users;
 
 CREATE TABLE Parking (
     id SERIAL PRIMARY KEY,
@@ -33,6 +35,15 @@ CREATE TABLE Vehicle (
     parking_id INTEGER REFERENCES Parking(id) NOT NULL,
     block_id INTEGER REFERENCES Block(id) NOT NULL,
     slot_id INTEGER REFERENCES Slot(id) NOT NULL
+);
+
+CREATE TABLE Admins (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR UNIQUE NOT NULL,
+    password VARCHAR NOT NULL,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    is_super BOOLEAN NOT NULL
 );
 
 CREATE OR REPLACE FUNCTION NumToChar(num INT)
@@ -223,20 +234,37 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION CheckAllSlots(parking_name VARCHAR)
-RETURNS TABLE (block_name VARCHAR, slot_number VARCHAR, is_empty BOOLEAN) AS $$
+CREATE OR REPLACE FUNCTION BlockFindAllFreeSlots(parking_name VARCHAR, block_name VARCHAR)
+RETURNS TABLE (slot_number INT) AS $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM parking WHERE name = parking_name) THEN
         RAISE EXCEPTION 'Parking with name % does not exist', parking_name;
     END IF;
 
     RETURN QUERY
-    SELECT b.name, s.number, s.is_empty
+    SELECT s.number
     FROM parking p
     JOIN block b ON p.id = b.parking_id
     JOIN slot s ON b.id = s.block_id
-    WHERE p.name = parking_name
-    ORDER BY b.name, s.number;
+    WHERE p.name = parking_name AND s.is_empty = TRUE AND b.name = block_name
+    ORDER BY s.number;
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION BlockFindAllFullSlots(parking_name VARCHAR, block_name VARCHAR)
+RETURNS TABLE (slot_number INT, wincode VARCHAR) AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM parking WHERE name = parking_name) THEN
+        RAISE EXCEPTION 'Parking with name % does not exist', parking_name;
+    END IF;
+
+    RETURN QUERY
+    SELECT s.number, v.wincode
+    FROM parking p
+    JOIN block b ON p.id = b.parking_id
+    JOIN slot s ON b.id = s.block_id
+    JOIN vehicle v ON s.id = v.slot_id
+    WHERE p.name = parking_name AND NOT s.is_empty AND b.name = block_name
+    ORDER BY s.number, v.wincode;
+END;
+$$ LANGUAGE plpgsql;

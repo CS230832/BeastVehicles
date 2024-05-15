@@ -1,6 +1,12 @@
 package types
 
 type (
+	AdminStore interface {
+		AddAdmin(admin *AdminPayload) error
+		RemoveAdmin(email string) error
+		GetAdmin(email string) (*AdminPayload, error)
+	}
+
 	ParkingStore interface {
 		AddParking(p *ParkingAddPayload) error
 		GetAllFreeSlots(parkingName string) ([]EmptySlotPayload, error)
@@ -11,6 +17,26 @@ type (
 		AddVehicle(v *VehiclePayload) (*VehiclePayloadReturn, error)
 		RemoveVehicle(wincode string) (*VehiclePayloadReturn, error)
 		GetVehicle(wincode string) (*VehiclePayloadReturn, error)
+	}
+
+	BlockStore interface {
+		GetFreeSlots(parking string, block string) ([]EmptySlotPayload, error)
+		GetFullSlots(parking string, block string) ([]FullSlotPayload, error)
+	}
+)
+
+type (
+	AdminPayload struct {
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		FirstName string `json:"first_name,omitempty"`
+		LastName  string `json:"last_name,omitempty"`
+		IsSuper   bool   `json:"is_super"`
+	}
+
+	AdminLoginPayload struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 )
 
@@ -47,6 +73,15 @@ type (
 
 	FullSlotPayload struct {
 		BlockName  string `json:"block"`
+		SlotNumber int    `json:"slot"`
+		WinCode    string `json:"wincode"`
+	}
+
+	EmptySlotReturnPayload struct {
+		SlotNumber int `json:"slot"`
+	}
+
+	FullSlotReturnPayload struct {
 		SlotNumber int    `json:"slot"`
 		WinCode    string `json:"wincode"`
 	}

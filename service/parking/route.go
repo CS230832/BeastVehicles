@@ -1,6 +1,7 @@
 package parking
 
 import (
+	"CS230832/BeastVehicles/service/auth"
 	"CS230832/BeastVehicles/types"
 	"CS230832/BeastVehicles/utils"
 	"fmt"
@@ -17,16 +18,24 @@ func NewHandler(store types.ParkingStore) *Handler {
 	return &Handler{store: store}
 }
 
-func (h *Handler) RegisterRoutes(router *mux.Router) {
-	router.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Hello World!")
-	})
-	router.HandleFunc("/parking", h.AddParking).Methods(http.MethodPost)
-	router.HandleFunc("/parking/free", h.GetAllFreeSlots).Methods(http.MethodGet)
-	router.HandleFunc("/parking/full", h.GetAllFullSlots).Methods(http.MethodGet)
+func (h *Handler) RegisterRoutes(router *mux.Router, store types.AdminStore) {
+	router.HandleFunc("/parking", auth.WithJWTAuth(h.addParking, store)).Methods(http.MethodPost)
+	router.HandleFunc("/parking/{name}/free", h.getAllFreeSlots).Methods(http.MethodGet)
+	router.HandleFunc("/parking/{name}/full", h.getAllFullSlots).Methods(http.MethodGet)
 }
 
-func (h *Handler) AddParking(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) addParking(w http.ResponseWriter, r *http.Request) {
+	admin, ok := utils.FromContext(r.Context())
+
+	if !ok {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("only super admin can add a parking"))
+		return
+	}
+	if !admin.IsSuper {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("only super admin can add a parking"))
+		return
+	}
+
 	var payload types.ParkingAddPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
@@ -42,38 +51,46 @@ func (h *Handler) AddParking(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, payload)
 }
 
-func (h *Handler) GetAllFreeSlots(w http.ResponseWriter, r *http.Request) {
-	var payload types.SlotPayload
+func (h *Handler) getAllFreeSlots(w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
 
-	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %s", err.Error()))
-		return
-	}
-
-	slots, err := h.store.GetAllFreeSlots(payload.ParkingName)
+	slots, err := h.store.GetAllFreeSlots(name)
 
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, slots)
+	var freeSlots map[string][]types.EmptySlotReturnPayload = make(map[string][]types.EmptySlotReturnPayload)
+
+	for _, slot := range slots {
+		freeSlots[slot.BlockName] = append(
+			freeSlots[slot.BlockName],
+			types.EmptySlotReturnPayload{SlotNumber: slot.SlotNumber},
+		)
+	}
+
+	utils.WriteJSON(w, http.StatusOK, freeSlots)
 }
 
-func (h *Handler) GetAllFullSlots(w http.ResponseWriter, r *http.Request) {
-	var payload types.SlotPayload
+func (h *Handler) getAllFullSlots(w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
 
-	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %s", err.Error()))
-		return
-	}
-
-	slots, err := h.store.GetAllFullSlots(payload.ParkingName)
+	slots, err := h.store.GetAllFullSlots(name)
 
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, slots)
+	var fullSlots map[string][]types.FullSlotReturnPayload = make(map[string][]types.FullSlotReturnPayload)
+
+	for _, slot := range slots {
+		fullSlots[slot.BlockName] = append(
+			fullSlots[slot.BlockName],
+			types.FullSlotReturnPayload{SlotNumber: slot.SlotNumber, WinCode: slot.WinCode},
+		)
+	}
+
+	utils.WriteJSON(w, http.StatusOK, fullSlots)
 }
