@@ -38,12 +38,18 @@ const showEmptyWincode = () => {
 }
 
 const wincode = ref('')
+const data = ref(null)
 
 const addVehicle = async () => {
   if (wincode.value) {
     try {
-      await ApiService.addVehicle(wincode.value, 'Test Station')
+      data.value = await ApiService.addVehicle(
+        wincode.value,
+        'Test Station',
+        localStorage.getItem('token')
+      )
       showSuccessMessage()
+      console.log(data.value)
     } catch (error) {
       showErrorMessage()
     }
@@ -55,7 +61,7 @@ const addVehicle = async () => {
 
 <template>
   <Toast />
-  <div class="p-4">
+  <div class="p-4 flex flex-col gap-5">
     <Card>
       <template #title>Add a vehicle</template>
       <template #content>
@@ -63,6 +69,15 @@ const addVehicle = async () => {
       </template>
       <template #footer>
         <Button icon="pi pi-plus" label="Add" @click="addVehicle" />
+      </template>
+    </Card>
+    <Card v-if="data">
+      <template #title> Your vehicle's location </template>
+
+      <template #content>
+        <p class="font-semibold">Station: {{ data.parking }}</p>
+        <p class="font-semibold">Block: {{ data.block }}</p>
+        <p class="font-semibold">Slot: {{ data.slot }}</p>
       </template>
     </Card>
   </div>

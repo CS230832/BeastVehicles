@@ -7,6 +7,7 @@ import Toast from 'primevue/toast'
 
 import { ref } from 'vue'
 import ApiService from '@/api'
+import checkIfUserIsAuthenticated from '@/views/auth/checkAuth'
 
 const toast = useToast()
 
@@ -40,9 +41,9 @@ const showEmptyWincode = () => {
 const wincode = ref('')
 
 const removeVehicle = async () => {
-  if (wincode.value) {
+  if (wincode.value && checkIfUserIsAuthenticated()) {
     try {
-      await ApiService.removeVehicle(wincode.value)
+      await ApiService.removeVehicle(wincode.value, localStorage.getItem('token'))
       showSuccessMessage()
     } catch (error) {
       showErrorMessage()

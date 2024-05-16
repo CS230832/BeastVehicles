@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosHeaders } from 'axios'
 
 const API_URL = 'http://192.168.1.16:8080/api/v1'
 
@@ -13,9 +13,21 @@ const ApiService = {
     }
   },
 
-  addVehicle: async (wincode, parking) => {
+  addVehicle: async (wincode, parking, token) => {
     try {
-      const response = await axios.post(`${API_URL}/vehicle`, { wincode, parking })
+      const response = await axios.post(
+        `${API_URL}/vehicle`,
+        {
+          wincode,
+          parking
+        },
+
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
       return response.data
     } catch (error) {
       console.error('Error adding vehicle:', error)
@@ -33,9 +45,17 @@ const ApiService = {
     }
   },
 
-  removeVehicle: async (wincode) => {
+  removeVehicle: async (wincode, token) => {
     try {
-      const response = await axios.delete(`${API_URL}/vehicle/${wincode}`)
+      const response = await axios.delete(
+        `${API_URL}/vehicle/${wincode}`,
+
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
       return response.data
     } catch (error) {
       console.error('Error removing vehicle:', error)
@@ -78,7 +98,34 @@ const ApiService = {
       const response = await axios.get(`${API_URL}/block/full?parking=${parking}&name=${name}`)
       return response.data
     } catch (error) {
-      console.error('Error fetching slots:', error)
+      console.error('Error fetchring slots:', error)
+      throw error
+    }
+  },
+
+  login: async (email, password) => {
+    try {
+      const response = await axios.post(`${API_URL}/admin/login`, { email, password })
+      return response.data
+    } catch (error) {
+      console.error('Error logging in:', error)
+      throw error
+    }
+  },
+
+  logout: async (token) => {
+    try {
+      await axios.post(
+        `${API_URL}/admin/logout`,
+        {},
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
+    } catch (error) {
+      console.error('Error loggin out:', error)
       throw error
     }
   }

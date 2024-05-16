@@ -29,16 +29,14 @@ const showNotFoundMessage = () => {
   })
 }
 
-const vehicleDetails = ref(null)
+const data = ref(null)
 const wincode = ref('')
 
 const findVehicle = async () => {
   try {
-    const data = await ApiService.findVehicle(wincode.value)
+    data.value = await ApiService.findVehicle(wincode.value)
 
-    if (data) {
-      vehicleDetails.value = data
-    } else {
+    if (!data.value) {
       showNotFoundMessage()
     }
   } catch (error) {
@@ -49,7 +47,7 @@ const findVehicle = async () => {
 
 <template>
   <Toast />
-  <div class="p-4">
+  <div class="p-4 flex flex-col gap-5">
     <Card>
       <template #title>Search for a vehicle</template>
       <template #content>
@@ -61,8 +59,15 @@ const findVehicle = async () => {
         <Button icon="pi pi-search" label="Search" @click="findVehicle" />
       </template>
     </Card>
+
+    <Card v-if="data">
+      <template #title> Vehicle's location </template>
+
+      <template #content>
+        <p class="font-semibold">Station: {{ data.parking }}</p>
+        <p class="font-semibold">Block: {{ data.block }}</p>
+        <p class="font-semibold">Slot: {{ data.slot }}</p>
+      </template>
+    </Card>
   </div>
-  <p v-if="vehicleDetails">
-    {{ vehicleDetails }}
-  </p>
 </template>

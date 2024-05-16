@@ -1,13 +1,29 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import router from '@/router'
 
 import Menubar from 'primevue/menubar'
 import Button from 'primevue/button'
 import Menu from 'primevue/menu'
 import Avatar from 'primevue/avatar'
 
-const router = useRouter()
+import ApiService from '@/api'
+import checkIfUserIsAuthenticated from '@/views/auth/checkAuth'
+
+const logout = async () => {
+  if (checkIfUserIsAuthenticated()) {
+    try {
+      await ApiService.logout(localStorage.getItem('token'))
+    } catch (error) {
+      console.log(error)
+    } finally {
+      localStorage.removeItem('token')
+      location.reload()
+    }
+  } else {
+    console.log('Something went wrong')
+  }
+}
 
 const navbarItems = ref([
   {
@@ -66,7 +82,10 @@ const menuItems = ref([
     items: [
       {
         label: 'Logout',
-        icon: 'pi pi-sign-out'
+        icon: 'pi pi-sign-out',
+        command: () => {
+          logout()
+        }
       }
     ]
   }

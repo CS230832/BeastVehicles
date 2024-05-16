@@ -7,6 +7,8 @@ import NotFound from '@/views/NotFound.vue'
 import FreeBlock from '@/views/FreeBlock.vue'
 import FullBlock from '@/views/FullBlock.vue'
 
+import checkIfUserIsAuthenticated from '@/views/auth/checkAuth'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -94,10 +96,6 @@ const router = createRouter({
     }
   ]
 })
-
-const checkIfUserIsAuthenticated = () => {
-  return true
-}
 
 const isAuthenticated = checkIfUserIsAuthenticated()
 
