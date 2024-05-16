@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS Slot;
 DROP TABLE IF EXISTS Vehicle;
 DROP TABLE IF EXISTS Admins;
 DROP TABLE IF EXISTS Users;
+DROP TABLE IF EXISTS LoginTokens;
 
 CREATE TABLE Parking (
     id SERIAL PRIMARY KEY,
@@ -44,6 +45,13 @@ CREATE TABLE Admins (
     first_name VARCHAR,
     last_name VARCHAR,
     is_super BOOLEAN NOT NULL
+);
+
+CREATE TABLE LoginTokens (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR REFERENCES Admins(email) NOT NULL,
+    content VARCHAR NOT NULL,
+    UNIQUE (email, content)
 );
 
 CREATE OR REPLACE FUNCTION NumToChar(num INT)

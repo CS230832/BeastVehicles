@@ -5,7 +5,6 @@ import (
 	"CS230832/BeastVehicles/types"
 	"CS230832/BeastVehicles/utils"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -33,13 +32,11 @@ func WithJWTAuth(handlerFunc http.HandlerFunc, store types.AdminStore) http.Hand
 
 		token, err := validateJWT(tokenString)
 		if err != nil {
-			log.Printf("Failed to validate token: %s\n", err.Error())
 			permissionDenied(w)
 			return
 		}
 
 		if !token.Valid {
-			log.Println("Token is invalid")
 			permissionDenied(w)
 			return
 		}
@@ -49,7 +46,27 @@ func WithJWTAuth(handlerFunc http.HandlerFunc, store types.AdminStore) http.Hand
 
 		admin, err := store.GetAdmin(email)
 		if err != nil {
-			log.Printf("Could not find admin with email : %s, Error: %s\n", email, err.Error())
+			permissionDenied(w)
+			return
+		}
+
+		loginTokens, err := store.GetTokens(email)
+		if err != nil {
+			permissionDenied(w)
+			return
+		}
+
+		hasLoggedIn := false
+		userAgent := r.Header.Get("User-Agent")
+		
+		for _, loginToken := range loginTokens {
+			if loginToken == userAgent {
+				hasLoggedIn = true
+				break
+			}
+		}
+
+		if !hasLoggedIn {
 			permissionDenied(w)
 			return
 		}

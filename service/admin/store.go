@@ -46,3 +46,34 @@ func (s *Store) GetAdmin(email string) (*types.AdminPayload, error) {
 
 	return &admin, nil
 }
+
+func (s *Store) AddToken(email string, content string) error {
+	_, err := s.db.Exec("INSERT INTO LoginTokens (email, content) VALUES ($1, $2);", email, content)
+
+	return err
+}
+
+func (s *Store) RemoveToken(email string, content string) error {
+	_, err := s.db.Exec("DELETE FROM LoginTokens WHERE email = $1 AND content = $2", email, content)
+	return err
+}
+
+func (s *Store) GetTokens(email string) ([]string, error) {
+	var tokens []string
+
+	rows, err := s.db.Query("SELECT content FROM LoginTokens WHERE email = $1;", email)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var token string
+		if err := rows.Scan(&token); err != nil {
+			return nil, err
+		}
+
+		tokens = append(tokens, token)
+	}
+	
+	return tokens, nil
+}

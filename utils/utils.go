@@ -50,7 +50,7 @@ func GetTokenFromRequest(r *http.Request) (string, error) {
 		return r.URL.Query().Get("token"), nil
 	}
 
-	return "", fmt.Errorf("should give jwt token")
+	return "", fmt.Errorf("should be logged in as an admin")
 }
 
 type key int

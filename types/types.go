@@ -5,6 +5,10 @@ type (
 		AddAdmin(admin *AdminPayload) error
 		RemoveAdmin(email string) error
 		GetAdmin(email string) (*AdminPayload, error)
+
+		AddToken(email string, content string) error
+		RemoveToken(email string, content string) error
+		GetTokens(email string) ([]string, error)
 	}
 
 	ParkingStore interface {

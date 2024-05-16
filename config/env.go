@@ -19,6 +19,11 @@ type Config struct {
 
 	JWTSecret              string
 	JWTExpirationInSeconds int
+
+	AdminEmail string
+	AdminPassword string
+	AdminFirstName string
+	AdminLastName string
 }
 
 var Envs Config = initConfig()
@@ -39,6 +44,11 @@ func initConfig() Config {
 
 		JWTSecret:              getEnv("JWT_SECRET", "ahleeafageaGUFGEWrudppifuponaefanpsFGEIUBFIB"),
 		JWTExpirationInSeconds: getEnvInt("JWT_EXPIRATION_IN_SECONDS", 60*60*24*30),
+
+		AdminEmail: getEnv("ADMIN_EMAIL", "admin@gmail.com"),
+		AdminPassword: getEnv("ADMIN_PASSWORD", "admin"),
+		AdminFirstName: getEnv("ADMIN_FIRST_NAME", "admin"),
+		AdminLastName: getEnv("ADMIN_LAST_NAME", "admin"),
 	}
 }
 

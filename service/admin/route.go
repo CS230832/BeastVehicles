@@ -20,18 +20,21 @@ func NewHandler(store types.AdminStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
-	defaultAdmin := types.AdminPayload {
-		Email: "admin@gmail.com",
-		Password: "admin",
-		FirstName: "admin",
-		LastName: "admin",
-		IsSuper: true,
+	if _, err := h.store.GetAdmin("admin@gmail.com"); err != nil {
+		defaultAdmin := types.AdminPayload{
+			Email:     config.Envs.AdminEmail,
+			Password:  config.Envs.AdminPassword,
+			FirstName: config.Envs.AdminFirstName,
+			LastName:  config.Envs.AdminLastName,
+			IsSuper:   true,
+		}
+		h.store.AddAdmin(&defaultAdmin)
 	}
-	h.store.AddAdmin(&defaultAdmin)
 
 	router.HandleFunc("/admin/register", auth.WithJWTAuth(h.registerAdmin, h.store)).Methods(http.MethodPost)
 	router.HandleFunc("/admin/{email}", auth.WithJWTAuth(h.removeAdmin, h.store)).Methods(http.MethodDelete)
 	router.HandleFunc("/admin/login", h.loginAdmin).Methods(http.MethodPost)
+	router.HandleFunc("/admin/logout", auth.WithJWTAuth(h.logoutAdmin, h.store)).Methods(http.MethodPost)
 }
 
 func (h *Handler) registerAdmin(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +70,7 @@ func (h *Handler) removeAdmin(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("should log in"))
 		return
 	}
-	
+
 	email := mux.Vars(r)["email"]
 
 	if !admin.IsSuper {
@@ -92,12 +95,12 @@ func (h *Handler) loginAdmin(w http.ResponseWriter, r *http.Request) {
 
 	admin, err := h.store.GetAdmin(loginPayload.Email)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("incorrenct password or email"))
 		return
 	}
 
 	if !auth.ComparePasswords(loginPayload.Password, admin.Password) {
-		utils.WriteError(w, http.StatusBadGateway, err)
+		utils.WriteError(w, http.StatusBadGateway, fmt.Errorf("incorrenct password or email"))
 		return
 	}
 
@@ -107,5 +110,29 @@ func (h *Handler) loginAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userAgent := r.Header.Get("User-Agent")
+
+	if userAgent == "" {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user-agent should be passed"))
+		return
+	}
+
+	h.store.AddToken(admin.Email, userAgent)
+
 	utils.WriteJSON(w, http.StatusOK, map[string]string{"token": token})
+}
+
+func (h *Handler) logoutAdmin(w http.ResponseWriter, r *http.Request) {
+	admin, ok := utils.FromContext(r.Context())
+	if !ok {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("should log in"))
+		return
+	}
+
+	if err := h.store.RemoveToken(admin.Email, r.Header.Get("User-Agent")); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, nil)
 }
