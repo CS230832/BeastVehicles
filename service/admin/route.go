@@ -35,6 +35,7 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/admin/{email}", auth.WithJWTAuth(h.removeAdmin, h.store)).Methods(http.MethodDelete)
 	router.HandleFunc("/admin/login", h.loginAdmin).Methods(http.MethodPost)
 	router.HandleFunc("/admin/logout", auth.WithJWTAuth(h.logoutAdmin, h.store)).Methods(http.MethodPost)
+	router.HandleFunc("/admin/info", auth.WithJWTAuth(h.getAdminInfo, h.store)).Methods(http.MethodGet)
 }
 
 func (h *Handler) registerAdmin(w http.ResponseWriter, r *http.Request) {
@@ -135,4 +136,22 @@ func (h *Handler) logoutAdmin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, nil)
+}
+
+func (h *Handler) getAdminInfo(w http.ResponseWriter, r *http.Request) {
+	admin, ok := utils.FromContext(r.Context())
+	if !ok {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("should log in"))
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, struct {
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		IsSuper   bool   `json:"is_super"`
+	}{
+		FirstName: admin.FirstName,
+		LastName:  admin.LastName,
+		IsSuper:   admin.IsSuper,
+	})
 }

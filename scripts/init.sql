@@ -57,9 +57,20 @@ CREATE TABLE LoginTokens (
 CREATE OR REPLACE FUNCTION NumToChar(num INT)
 RETURNS VARCHAR AS $$
 DECLARE
-    result VARCHAR;
+    result VARCHAR := '';
+    remainder INT;
+    current_num INT := num;
 BEGIN
-    SELECT chr(num + 65) INTO result;
+    WHILE current_num >= 0 LOOP
+        remainder := current_num % 26;
+        result := CHR(remainder + ASCII('A')) || result;
+        current_num := current_num / 26 - 1;
+        
+        IF current_num < 0 THEN
+            EXIT;
+        END IF;
+    END LOOP;
+
     RETURN result;
 END;
 $$ LANGUAGE plpgsql;

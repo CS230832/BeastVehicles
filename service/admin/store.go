@@ -66,6 +66,8 @@ func (s *Store) GetTokens(email string) ([]string, error) {
 		return nil, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		var token string
 		if err := rows.Scan(&token); err != nil {
