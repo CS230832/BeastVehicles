@@ -6,27 +6,21 @@ import (
 	"CS230832/BeastVehicles/utils"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func NewJWT(secret string, email string) (string, error) {
-	expiration := time.Second * time.Duration(config.Envs.JWTExpirationInSeconds)
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email": email,
-		"exp":   time.Now().Add(expiration).Unix(),
-	})
+func NewJWT(secret string, username string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"username": username})
 
 	return token.SignedString([]byte(secret))
 }
 
-func WithJWTAuth(handlerFunc http.HandlerFunc, store types.AdminStore) http.HandlerFunc {
+func WithJWTAuth(handler http.HandlerFunc, store types.UserStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tokenString, err := utils.GetTokenFromRequest(r)
-		if err != nil {
-			utils.WriteError(w, http.StatusBadRequest, err)
+		tokenString, ok := utils.GetTokenFromRequest(r)
+		if !ok {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("no login token provided"))
 			return
 		}
 
@@ -42,47 +36,38 @@ func WithJWTAuth(handlerFunc http.HandlerFunc, store types.AdminStore) http.Hand
 		}
 
 		claims := token.Claims.(jwt.MapClaims)
-		email := claims["email"].(string)
+		username := claims["username"].(string)
+		userLoginToken := utils.GetLoginTokenFromRequest(r)
 
-		admin, err := store.GetAdmin(email)
+		loggedIn, err := store.HasLoginToken(username, userLoginToken)
 		if err != nil {
-			permissionDenied(w)
+			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		loginTokens, err := store.GetTokens(email)
-		if err != nil {
-			permissionDenied(w)
+		if !loggedIn {
+			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid login token"))
 			return
 		}
-
-		hasLoggedIn := false
-		userAgent := r.Header.Get("User-Agent")
 		
-		for _, loginToken := range loginTokens {
-			if loginToken == userAgent {
-				hasLoggedIn = true
-				break
-			}
-		}
-
-		if !hasLoggedIn {
-			permissionDenied(w)
+		user, err := store.GetUserByUserName(username)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		ctx := r.Context()
-		ctx = utils.NewContext(ctx, admin)
+		ctx = utils.NewContextWithUser(ctx, user)
 		r = r.WithContext(ctx)
 
-		handlerFunc(w, r)
+		handler(w, r)
 	}
 }
 
 func validateJWT(tokenString string) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method '%v'", token.Header["alg"])
 		}
 
 		return []byte(config.Envs.JWTSecret), nil
@@ -90,5 +75,5 @@ func validateJWT(tokenString string) (*jwt.Token, error) {
 }
 
 func permissionDenied(w http.ResponseWriter) {
-	utils.WriteError(w, http.StatusForbidden, fmt.Errorf("permission denied"))
+	utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("permission denied"))
 }

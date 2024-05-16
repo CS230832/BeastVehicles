@@ -22,45 +22,52 @@ func ParseJSON(r *http.Request, payload any) error {
 	return json.NewDecoder(r.Body).Decode(payload)
 }
 
-func WriteJSON(w http.ResponseWriter, status int, v any) error {
+func WriteJSON(w http.ResponseWriter, status int, value any) error {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
-	if v == nil {
-		return nil
-	}
-	// return json.NewEncoder(w).Encode(model{Success: true, Data: v})
-	return json.NewEncoder(w).Encode(v)
+	return json.NewEncoder(w).Encode(model{Success: true, Data: value})
 }
 
-func WriteError(w http.ResponseWriter, status int, err error) {
+func WriteError(w http.ResponseWriter, status int, msg error) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
-
-	if err := json.NewEncoder(w).Encode(model{Success: false, Data: err.Error()}); err != nil {
+	if msg == nil {
+		msg = fmt.Errorf("unknown error")
+	}
+	if err := json.NewEncoder(w).Encode(model{Success: false, Data: msg.Error()}); err != nil {
 		log.Println(err.Error())
 	}
 }
 
-func GetTokenFromRequest(r *http.Request) (string, error) {
+func GetTokenFromRequest(r *http.Request) (string, bool) {
 	if token := r.Header.Get("Authorization"); token != "" {
-		return token, nil
+		return token, true
 	}
 	
 	if r.URL.Query().Has("token") {
-		return r.URL.Query().Get("token"), nil
+		return r.URL.Query().Get("token"), true
 	}
 
-	return "", fmt.Errorf("should be logged in as an admin")
+	cookie, err := r.Cookie("jwt_token")
+	if err == nil {
+		return cookie.Value, true
+	}
+
+	return "", false
 }
 
 type key int
-var adminKey key
+var userKey key
 
-func NewContext(ctx context.Context, admin *types.AdminPayload) context.Context {
-	return context.WithValue(ctx, adminKey, admin)
+func NewContextWithUser(ctx context.Context, user *types.UserPayload) context.Context {
+	return context.WithValue(ctx, userKey, user)
 }
 
-func FromContext(ctx context.Context) (*types.AdminPayload, bool) {
-	admin, ok := ctx.Value(adminKey).(*types.AdminPayload)
-	return admin, ok
+func GetUserFromContext(ctx context.Context) (*types.UserPayload, bool) {
+	user, ok := ctx.Value(userKey).(*types.UserPayload)
+	return user, ok
+}
+
+func GetLoginTokenFromRequest(r *http.Request) string {
+	return fmt.Sprintf("%s, %s", r.Host, r.Header.Get("User-Agent"))
 }

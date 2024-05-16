@@ -1,10 +1,7 @@
 package api
 
 import (
-	"CS230832/BeastVehicles/service/admin"
-	"CS230832/BeastVehicles/service/block"
-	"CS230832/BeastVehicles/service/parking"
-	"CS230832/BeastVehicles/service/vehicle"
+	"CS230832/BeastVehicles/service/users"
 	"database/sql"
 	"log"
 	"net/http"
@@ -26,18 +23,10 @@ func (a *ApiServer) Run() error {
 
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
 
-	adminStore := admin.NewStore(a.db)
+	userHandler := users.NewHandler(users.NewStore(a.db))
 
-	adminHandler := admin.NewHandler(adminStore)
-	vehicleHandler := vehicle.NewHandler(vehicle.NewStore(a.db))
-	parkingHandler := parking.NewHandler(parking.NewStore(a.db))
-	blockHandler := block.NewHandler(block.NewStore(a.db))
-
-	vehicleHandler.RegisterRoutes(subrouter, adminStore)
-	adminHandler.RegisterRoutes(subrouter)
-	parkingHandler.RegisterRoutes(subrouter, adminStore)
-	blockHandler.RegisterRoutes(subrouter)
-
+	userHandler.RegisterRoutes(subrouter)
+	
 	corsHandler := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
