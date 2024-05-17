@@ -49,8 +49,8 @@ func WithJWTAuth(handler http.HandlerFunc, store types.UserStore) http.HandlerFu
 			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid login token"))
 			return
 		}
-		
-		user, err := store.GetUserByUserName(username)
+
+		user, err := store.GetUser(username)
 		if err != nil {
 			utils.WriteError(w, http.StatusBadRequest, err)
 			return

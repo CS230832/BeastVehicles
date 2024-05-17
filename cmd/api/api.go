@@ -1,7 +1,9 @@
 package api
 
 import (
+	"CS230832/BeastVehicles/service/parkings"
 	"CS230832/BeastVehicles/service/users"
+	"CS230832/BeastVehicles/service/vehicles"
 	"database/sql"
 	"log"
 	"net/http"
@@ -23,9 +25,15 @@ func (a *ApiServer) Run() error {
 
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
 
-	userHandler := users.NewHandler(users.NewStore(a.db))
+	userStore := users.NewStore(a.db)
+
+	userHandler := users.NewHandler(userStore)
+	parkingHandler := parkings.NewHandler(parkings.NewStore(a.db))
+	vehicleHandler := vehicles.NewHandler(vehicles.NewStore(a.db))
 
 	userHandler.RegisterRoutes(subrouter)
+	parkingHandler.RegisterRoutes(subrouter, userStore)
+	vehicleHandler.RegisterRoutes(subrouter, userStore)
 	
 	corsHandler := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

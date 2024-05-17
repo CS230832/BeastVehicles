@@ -17,8 +17,8 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) AddUser(user *types.UserRegisterPayload) error {
 	if user.Role != types.Root &&
-		user.Role != types.CEO &&
-		user.Role != types.Manager {
+		user.Role != types.Manager &&
+		user.Role != types.Admin {
 		return fmt.Errorf("invalid role")
 	}
 
@@ -112,7 +112,7 @@ func (s *Store) RemoveUser(username string) error {
 	return tx.Commit()
 }
 
-func (s *Store) GetUserByUserName(username string) (*types.UserPayload, error) {
+func (s *Store) GetUser(username string) (*types.UserPayload, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err

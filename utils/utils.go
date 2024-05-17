@@ -71,3 +71,21 @@ func GetUserFromContext(ctx context.Context) (*types.UserPayload, bool) {
 func GetLoginTokenFromRequest(r *http.Request) string {
 	return fmt.Sprintf("%s, %s", r.Host, r.Header.Get("User-Agent"))
 }
+
+func NumToBlockName(num int) string {
+	if num < 0 {
+		return ""
+	}
+	
+	result := ""
+	for num >= 0 {
+		remainder := num % 26
+		result = string(rune('A'+remainder)) + result
+		num = num/26 - 1
+		if num < 0 {
+			break
+		}
+	}
+
+	return result
+}

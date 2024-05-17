@@ -22,7 +22,7 @@ func NewHandler(store types.UserStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
-	if _, err := h.store.GetUserByUserName(config.Envs.RootUserName); err != nil {
+	if _, err := h.store.GetUser(config.Envs.RootUserName); err != nil {
 		if err := h.store.AddUser(&types.UserRegisterPayload{
 			UserName:  config.Envs.RootUserName,
 			Password:  config.Envs.RootPassword,
@@ -35,7 +35,7 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	}
 
 	router.HandleFunc("/users/register", auth.WithJWTAuth(h.registerUser, h.store)).Methods(http.MethodPost)
-	router.HandleFunc("/users/info", auth.WithJWTAuth(h.getUserByUserName, h.store)).Methods(http.MethodGet)
+	router.HandleFunc("/users/info", auth.WithJWTAuth(h.GetUser, h.store)).Methods(http.MethodGet)
 	router.HandleFunc("/users/delete", auth.WithJWTAuth(h.removeUser, h.store)).Methods(http.MethodDelete)
 	router.HandleFunc("/users/login", h.loginUser).Methods(http.MethodPost)
 	router.HandleFunc("/users/logout", auth.WithJWTAuth(h.logoutUser, h.store)).Methods(http.MethodPost)
@@ -48,7 +48,7 @@ func (h *Handler) registerUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Role != types.Root && user.Role != types.CEO {
+	if user.Role != types.Root && user.Role != types.Manager {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("unauthorized"))
 		return
 	}
@@ -56,6 +56,16 @@ func (h *Handler) registerUser(w http.ResponseWriter, r *http.Request) {
 	var payload types.UserRegisterPayload
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user body not given"))
+		return
+	}
+
+	if user.Role == types.Manager && payload.Role == types.Root {
+		utils.WriteError(w, http.StatusForbidden, fmt.Errorf("only root user can add another root"))
+		return
+	}
+
+	if user.Role == types.Manager && (payload.ParkingName != user.ParkingName) {
+		utils.WriteError(w, http.StatusForbidden, fmt.Errorf("manager cannot add user to another parking"))
 		return
 	}
 
@@ -67,7 +77,7 @@ func (h *Handler) registerUser(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, nil)
 }
 
-func (h *Handler) getUserByUserName(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	if !r.URL.Query().Has("username") {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("no username parameter given"))
 		return
@@ -75,7 +85,7 @@ func (h *Handler) getUserByUserName(w http.ResponseWriter, r *http.Request) {
 
 	username := r.URL.Query().Get("username")
 
-	user, err := h.store.GetUserByUserName(username)
+	user, err := h.store.GetUser(username)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -91,17 +101,50 @@ func (h *Handler) removeUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Role != types.Root && user.Role != types.CEO {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("unauthorized"))
+	if user.Role == types.Admin {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("only root and manager can delete a user"))
 		return
 	}
 
-	if err := h.store.RemoveAllLoginTokens(user.UserName); err != nil {
+	if !r.URL.Query().Has("username") {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("no username parameter given"))
+		return
+	}
+
+	username := r.URL.Query().Get("username")
+
+	targetUser, err := h.store.GetUser(username)
+	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	if err := h.store.RemoveUser(user.UserName); err != nil {
+	if user.Role == types.Root && user.Role == targetUser.Role && user.UserName != targetUser.UserName {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("root user can delete another root user only if it is themselves"))
+		return
+	}
+
+	if user.Role == types.Manager && targetUser.Role == types.Root {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("manager cannot delete a root user"))
+		return
+	}
+
+	if user.Role == types.Manager && user.Role == targetUser.Role && user.UserName != targetUser.UserName {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("manager can delete another manager only if it is themselves"))
+		return
+	}
+
+	if user.Role == types.Manager && targetUser.ParkingName != user.ParkingName {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("user is not in your parking"))
+		return
+	}
+
+	if err := h.store.RemoveAllLoginTokens(username); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := h.store.RemoveUser(username); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -116,7 +159,7 @@ func (h *Handler) loginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.store.GetUserByUserName(payload.UserName)
+	user, err := h.store.GetUser(payload.UserName)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid credentials"))
 		return
