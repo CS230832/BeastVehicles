@@ -1,0 +1,5 @@
+.vscode/
+bin/
+data/
+docker-compose.yml
+Dockerfile

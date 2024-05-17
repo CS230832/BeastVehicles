@@ -13,5 +13,21 @@ services:
         ports:
             - "${DB_PORT}:${DB_PORT}"
         volumes:
-            - ./data/db:/var/lib/postgresql/data
+            - pgdata:/var/lib/postgresql/data
             - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    app:
+        build: .
+        ports:
+            - "${PORT}:${PORT}"
+        depends_on:
+            - db
+        environment:
+            HOST: ${HOST}
+            PORT: ${PORT}
+            DB_HOST: ${DB_HOST}
+            DB_PORT: ${DB_PORT}
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+            DB_NAME: ${DB_NAME}
+volumes:
+    pgdata:
