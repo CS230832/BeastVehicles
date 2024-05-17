@@ -1,6 +1,7 @@
 package api
 
 import (
+	"CS230832/BeastVehicles/service/blocks"
 	"CS230832/BeastVehicles/service/parkings"
 	"CS230832/BeastVehicles/service/users"
 	"CS230832/BeastVehicles/service/vehicles"
@@ -30,10 +31,12 @@ func (a *ApiServer) Run() error {
 	userHandler := users.NewHandler(userStore)
 	parkingHandler := parkings.NewHandler(parkings.NewStore(a.db))
 	vehicleHandler := vehicles.NewHandler(vehicles.NewStore(a.db))
+	blockHandler := blocks.NewHandler(blocks.NewStore(a.db))
 
 	userHandler.RegisterRoutes(subrouter)
 	parkingHandler.RegisterRoutes(subrouter, userStore)
 	vehicleHandler.RegisterRoutes(subrouter, userStore)
+	blockHandler.RegisterRoutes(subrouter)
 	
 	corsHandler := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

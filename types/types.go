@@ -26,6 +26,16 @@ type (
 		GetParking(name string) (*ParkingPayload, error)
 	}
 
+	BlockStore interface {
+		GetBlock(name string, parking string) (*BlockPayload, error)
+		GetBlockFreeSlots(name string, parking string) (*BlockPayload, error)
+		GetBlockFullSlots(name string, parking string) (*BlockPayload, error)
+
+		GetBlocks(parking string) (*BlockSetPayload, error)
+		GetFreeSlotsInBlocks(parking string) (*BlockSetPayload, error)
+		GetFullSlotsInBlocks(parking string) (*BlockSetPayload, error)
+	}
+
 	VehicleStore interface {
 		AddVehicle(payload *VehicleRegisterPayload, parking string) (*VehiclePayload, error)
 		RemoveVehicle(wincode string) error
@@ -69,6 +79,22 @@ type (
 		Name     string `json:"name"`
 		Capacity int    `json:"capacity"`
 		Region   string `json:"region,omitempty"`
+	}
+)
+
+type (
+	BlockPayload struct {
+		Name  string
+		Slots []SlotPayload
+	}
+
+	SlotPayload struct {
+		Number  int     `json:"slot"`
+		WinCode *string `json:"wincode,omitempty"`
+	}
+
+	BlockSetPayload struct {
+		Blocks map[string][]SlotPayload
 	}
 )
 
