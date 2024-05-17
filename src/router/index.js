@@ -39,6 +39,20 @@ const router = createRouter({
     },
 
     {
+      path: '/add-station',
+      name: 'add-station',
+      component: () => import('@/components/home/AddStationCard.vue'),
+      meta: { requiresAuth: true, requiresRoot: true }
+    },
+
+    {
+      path: '/remove-station',
+      name: 'remove-station',
+      component: () => import('@/components/home/RemoveStationCard.vue'),
+      meta: { requiresAuth: true, requiresRoot: true }
+    },
+
+    {
       path: '/remove',
       name: 'remove',
       component: () => import('@/components/home/RemoveCard.vue'),

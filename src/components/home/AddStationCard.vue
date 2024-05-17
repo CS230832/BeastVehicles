@@ -14,12 +14,10 @@ const showSuccessMessage = () => {
   toast.add({
     severity: 'success',
     summary: 'Success',
-    detail: 'Vehicle successfully added',
+    detail: 'Station successfully created',
     life: 3000
   })
 }
-
-const errorMessage = ref(null)
 
 const showErrorMessage = () => {
   toast.add({
@@ -30,15 +28,22 @@ const showErrorMessage = () => {
   })
 }
 
-const wincode = ref('')
-const data = ref(null)
+const name = ref(null)
+const region = ref(null)
+const capacity = ref(null)
+const errorMessage = ref(null)
 
-const addVehicle = async () => {
+const createStation = async () => {
   try {
-    data.value = await ApiService.addVehicle(wincode.value, localStorage.getItem('token'))
+    await ApiService.createStation(
+      name.value,
+      region.value,
+      capacity.value,
+      localStorage.getItem('token')
+    )
     showSuccessMessage()
   } catch (error) {
-    errorMessage.value = error.response.data.data
+    errorMessage.value = error
     showErrorMessage()
   }
 }
@@ -48,21 +53,16 @@ const addVehicle = async () => {
   <Toast />
   <div class="p-4 flex flex-col gap-5">
     <Card>
-      <template #title>Add a vehicle</template>
+      <template #title>Create a station</template>
       <template #content>
-        <InputText type="text" placeholder="Enter wincode" v-model="wincode" />
+        <div class="flex gap-2">
+          <InputText type="text" placeholder="Enter station name" v-model="name" />
+          <InputText type="text" placeholder="Enter region" v-model="region" />
+          <InputText type="number" placeholder="Enter capacity" v-model="capacity" />
+        </div>
       </template>
       <template #footer>
-        <Button icon="pi pi-plus" label="Add" @click="addVehicle" />
-      </template>
-    </Card>
-    <Card v-if="data">
-      <template #title> Your vehicle's location </template>
-
-      <template #content>
-        <p class="font-semibold">Station: {{ data.data.parking }}</p>
-        <p class="font-semibold">Block: {{ data.data.block }}</p>
-        <p class="font-semibold">Slot: {{ data.data.slot }}</p>
+        <Button icon="pi pi-car" label="Create" @click="createStation" />
       </template>
     </Card>
   </div>

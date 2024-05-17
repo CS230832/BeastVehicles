@@ -20,25 +20,12 @@ const showErrorMessage = () => {
   })
 }
 
-const showNotFoundMessage = () => {
-  toast.add({
-    severity: 'error',
-    summary: 'Error',
-    detail: `Vehicle not found`,
-    life: 3000
-  })
-}
-
 const data = ref(null)
 const wincode = ref('')
 
 const findVehicle = async () => {
   try {
-    data.value = await ApiService.findVehicle(wincode.value)
-
-    if (!data.value) {
-      showNotFoundMessage()
-    }
+    data.value = await ApiService.findVehicle(wincode.value) // I am here
   } catch (error) {
     showErrorMessage()
   }

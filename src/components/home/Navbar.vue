@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import router from '@/router'
 
 import Menubar from 'primevue/menubar'
@@ -9,6 +9,7 @@ import Avatar from 'primevue/avatar'
 
 import ApiService from '@/api'
 import checkIfUserIsAuthenticated from '@/views/auth/checkAuth'
+import checkIfUserIsRoot from '@/views/auth/checkRoot'
 
 const logout = async () => {
   if (checkIfUserIsAuthenticated()) {
@@ -18,6 +19,7 @@ const logout = async () => {
       console.log(error)
     } finally {
       localStorage.removeItem('token')
+      localStorage.removeItem('username')
       location.reload()
     }
   } else {
@@ -44,7 +46,7 @@ const navbarItems = ref([
 
   {
     label: 'New',
-    icon: 'pi pi-plus',
+    icon: 'pi pi-car',
     command: () => {
       router.push('/add')
     }
@@ -94,6 +96,28 @@ const menuItems = ref([
 const toggle = (event) => {
   menu.value.toggle(event)
 }
+
+onMounted(async () => {
+  const isRoot = await checkIfUserIsRoot()
+  if (isRoot) {
+    navbarItems.value.push(
+      {
+        label: 'New Station',
+        icon: 'pi pi-plus',
+        command: () => {
+          router.push('/add-station')
+        }
+      },
+      {
+        label: 'Remove Station',
+        icon: 'pi pi-minus-circle',
+        command: () => {
+          router.push('/remove-station')
+        }
+      }
+    )
+  }
+})
 </script>
 
 <template>

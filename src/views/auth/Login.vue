@@ -8,23 +8,23 @@ import { RouterLink } from 'vue-router'
 
 import ApiService from '@/api'
 
-const email = ref(null)
+const username = ref(null)
 const password = ref(null)
 const data = ref(null)
 
 const login = async () => {
-  if (email.value && password.value) {
+  if (username.value && password.value) {
     try {
-      data.value = await ApiService.login(email.value, password.value)
-      console.log(data.value)
+      data.value = await ApiService.login(username.value, password.value)
     } catch (error) {
       console.log(error)
     } finally {
-      localStorage.setItem('token', data.value.token)
+      localStorage.setItem('token', data.value.data)
+      localStorage.setItem('username', username.value)
       location.reload()
     }
   } else {
-    console.log('Email or password cannot be empty')
+    console.log('Username or password cannot be empty')
   }
 }
 </script>
@@ -41,7 +41,7 @@ const login = async () => {
             id="username"
             required
             placeholder="Enter username"
-            v-model="email"
+            v-model="username"
           />
 
           <label for="password">Password: </label>

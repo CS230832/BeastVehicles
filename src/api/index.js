@@ -1,26 +1,30 @@
-import axios, { AxiosHeaders } from 'axios'
+import axios from 'axios'
 
 const API_URL = 'http://192.168.1.16:8080/api/v1'
 
 const ApiService = {
-  createStation: async (name, region, max) => {
+  createStation: async (name, region, capacity, token) => {
     try {
-      const response = await axios.post(`${API_URL}/parking`, { name, region, max })
+      const response = await axios.post(
+        `${API_URL}/parkings/register`,
+        { name, region, capacity: parseInt(capacity) },
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
       return response.data
     } catch (error) {
-      console.error('Error creating station:', error)
+      console.error('Error creating station: ', error)
       throw error
     }
   },
 
-  addVehicle: async (wincode, parking, token) => {
+  removeStation: async (name, token) => {
     try {
-      const response = await axios.post(
-        `${API_URL}/vehicle`,
-        {
-          wincode,
-          parking
-        },
+      const response = await axios.delete(
+        `${API_URL}/parkings/delete?name=${name}`,
 
         {
           headers: {
@@ -30,14 +34,72 @@ const ApiService = {
       )
       return response.data
     } catch (error) {
-      console.error('Error adding vehicle:', error)
+      console.error('Error removing station: ', error)
+      throw error
+    }
+  },
+
+  getStation: async (name) => {
+    try {
+      const response = await axios.get(`${API_URL}/parkings/info?name=${name}`)
+      return response.data
+    } catch (error) {
+      console.log('Error getting station: ', error)
+      throw error
+    }
+  },
+
+  addVehicle: async (wincode, token) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/vehicles/register`,
+        { wincode },
+
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Error adding vehicle: ', error)
+      throw error
+    }
+  },
+
+  addMultipleVehicles: async (wincodes, token) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/vehicles/set/register`,
+        wincodes,
+
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Error adding vehicles: ', error)
       throw error
     }
   },
 
   findVehicle: async (wincode) => {
     try {
-      const response = await axios.get(`${API_URL}/vehicle/${wincode}`)
+      const response = await axios.get(`${API_URL}/vehicles/info?wincode=${wincode}`)
+      return response.data
+    } catch (error) {
+      console.error('Error finding vehicle: ', error)
+      throw error
+    }
+  },
+
+  findMultipleVehicles: async (wincodes) => {
+    try {
+      const response = await axios.post(`${API_URL}/vehicles/set/info`, wincodes)
       return response.data
     } catch (error) {
       console.error('Error finding vehicle:', error)
@@ -48,7 +110,8 @@ const ApiService = {
   removeVehicle: async (wincode, token) => {
     try {
       const response = await axios.delete(
-        `${API_URL}/vehicle/${wincode}`,
+        `${API_URL}/vehicles/delete?wincode=${wincode}`,
+        {},
 
         {
           headers: {
@@ -58,54 +121,93 @@ const ApiService = {
       )
       return response.data
     } catch (error) {
-      console.error('Error removing vehicle:', error)
+      console.error('Error removing vehicle: ', error)
+      throw error
+    }
+  },
+
+  removeMultipleVehicles: async (wincodes, token) => {
+    try {
+      const response = await axios.delete(
+        `${API_URL}/vehicles/set/delete`,
+        wincodes,
+
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Error removing vehicle: ', error)
+      throw error
+    }
+  },
+
+  getAllBlocks: async (parking) => {
+    try {
+      const response = await axios.get(`${API_URL}/blocks/all/info?parking=${parking}`)
+      return response.data
+    } catch (error) {
+      console.error('Error getting all slots: ', error)
       throw error
     }
   },
 
   getFreeBlocks: async (parking) => {
     try {
-      const response = await axios.get(`${API_URL}/parking/${parking}/free`)
+      const response = await axios.get(`${API_URL}/blocks/all/free?parking=${parking}`)
       return response.data
     } catch (error) {
-      console.error('Error getting free slots:', error)
+      console.error('Error getting free slots: ', error)
       throw error
     }
   },
 
   getFullBlocks: async (parking) => {
     try {
-      const response = await axios.get(`${API_URL}/parking/${parking}/full`)
+      const response = await axios.get(`${API_URL}/blocks/all/full?parking=${parking}`)
       return response.data
     } catch (error) {
-      console.error('Error getting full slots:', error)
+      console.error('Error getting full slots: ', error)
+      throw error
+    }
+  },
+
+  getAllSlots: async (parking, name) => {
+    try {
+      const response = await axios.get(`${API_URL}/blocks/info?parking=${parking}&name=${name}`)
+      return response.data
+    } catch (error) {
+      console.error('Error getting all slots in specific station: ', error)
       throw error
     }
   },
 
   getFreeSlots: async (parking, name) => {
     try {
-      const response = await axios.get(`${API_URL}/block/free?parking=${parking}&name=${name}`)
+      const response = await axios.get(`${API_URL}/blocks/free?parking=${parking}&name=${name}`)
       return response.data
     } catch (error) {
-      console.error('Error fetching slots:', error)
+      console.error('Error getting free slots in specific station: ', error)
       throw error
     }
   },
 
   getFullSlots: async (parking, name) => {
     try {
-      const response = await axios.get(`${API_URL}/block/full?parking=${parking}&name=${name}`)
+      const response = await axios.get(`${API_URL}/blocks/full?parking=${parking}&name=${name}`)
       return response.data
     } catch (error) {
-      console.error('Error fetchring slots:', error)
+      console.error('Error getting full slots in specific station: ', error)
       throw error
     }
   },
 
-  login: async (email, password) => {
+  login: async (username, password) => {
     try {
-      const response = await axios.post(`${API_URL}/admin/login`, { email, password })
+      const response = await axios.post(`${API_URL}/users/login`, { username, password })
       return response.data
     } catch (error) {
       console.error('Error logging in:', error)
@@ -116,7 +218,7 @@ const ApiService = {
   logout: async (token) => {
     try {
       await axios.post(
-        `${API_URL}/admin/logout`,
+        `${API_URL}/users/logout`,
         {},
         {
           headers: {
@@ -126,6 +228,56 @@ const ApiService = {
       )
     } catch (error) {
       console.error('Error loggin out:', error)
+      throw error
+    }
+  },
+
+  register: async (username, password, role, firstName, lastName, parking, token) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/users/register`,
+        { username, password, role, firstName, lastName, parking },
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.log('Error registering user: ', error)
+      throw error
+    }
+  },
+
+  getUser: async (username, token) => {
+    try {
+      const response = await axios.get(`${API_URL}/users/info?username=${username}`, {
+        headers: {
+          Authorization: token
+        }
+      })
+      return response.data
+    } catch (error) {
+      console.log('Error getting user: ', error)
+      throw error
+    }
+  },
+
+  removeUser: async (username, token) => {
+    try {
+      const response = await axios.delete(
+        `${API_URL}/users/delete?username=${username}`,
+        {},
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.log('Error removing user: ', error)
       throw error
     }
   }
