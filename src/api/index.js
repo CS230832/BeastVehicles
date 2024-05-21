@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-const API_URL = 'http://192.168.1.16:8080/api/v1'
+const API_URL = 'http://localhost:8080/api/v1'
 
 const ApiService = {
-  createStation: async (name, region, capacity, token) => {
+  addStation: async (name, region, capacity, token) => {
     try {
       const response = await axios.post(
         `${API_URL}/parkings/register`,
@@ -111,7 +111,6 @@ const ApiService = {
     try {
       const response = await axios.delete(
         `${API_URL}/vehicles/delete?wincode=${wincode}`,
-        {},
 
         {
           headers: {
@@ -266,15 +265,11 @@ const ApiService = {
 
   removeUser: async (username, token) => {
     try {
-      const response = await axios.delete(
-        `${API_URL}/users/delete?username=${username}`,
-        {},
-        {
-          headers: {
-            Authorization: token
-          }
+      const response = await axios.delete(`${API_URL}/users/delete?username=${username}`, {
+        headers: {
+          Authorization: token
         }
-      )
+      })
       return response.data
     } catch (error) {
       console.log('Error removing user: ', error)

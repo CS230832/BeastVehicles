@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import Login from '@/views/auth/Login.vue'
-import Signup from '@/views/auth/Signup.vue'
 import NotFound from '@/views/NotFound.vue'
 
-import FreeBlock from '@/views/FreeBlock.vue'
-import FullBlock from '@/views/FullBlock.vue'
+import FreeSlotsInBlock from '@/views/block/FreeSlotsInBlock.vue'
+import FullSlotsInBlock from '@/views/block/FullSlotsInBlock.vue'
 
 import checkIfUserIsAuthenticated from '@/views/auth/checkAuth'
+import checkIfUserIsRoot from '@/views/auth/checkRoot'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,49 +27,63 @@ const router = createRouter({
     {
       path: '/search',
       name: 'search',
-      component: () => import('@/components/home/SearchCard.vue'),
+      component: () => import('@/components/home/SearchVehicleCard.vue'),
       meta: { requiresAuth: true }
     },
 
     {
       path: '/add',
       name: 'add',
-      component: () => import('@/components/home/AddCard.vue'),
+      component: () => import('@/components/home/AddVehicleCard.vue'),
       meta: { requiresAuth: true }
     },
 
     {
       path: '/add-station',
       name: 'add-station',
-      component: () => import('@/components/home/AddStationCard.vue'),
+      component: () => import('@/components/root/AddStationCard.vue'),
       meta: { requiresAuth: true, requiresRoot: true }
     },
 
     {
       path: '/remove-station',
       name: 'remove-station',
-      component: () => import('@/components/home/RemoveStationCard.vue'),
+      component: () => import('@/components/root/RemoveStationCard.vue'),
+      meta: { requiresAuth: true, requiresRoot: true }
+    },
+
+    {
+      path: '/add-user',
+      name: 'add-user',
+      component: () => import('@/components/root/AddUserCard.vue'),
+      meta: { requiresAuth: true, requiresRoot: true }
+    },
+
+    {
+      path: '/remove-user',
+      name: 'remove-user',
+      component: () => import('@/components/root/RemoveUserCard.vue'),
       meta: { requiresAuth: true, requiresRoot: true }
     },
 
     {
       path: '/remove',
       name: 'remove',
-      component: () => import('@/components/home/RemoveCard.vue'),
+      component: () => import('@/components/home/RemoveVehicleCard.vue'),
       meta: { requiresAuth: true }
     },
 
     {
       path: '/free',
       name: 'free',
-      component: () => import('@/views/Free.vue'),
+      component: () => import('@/views/station/FreeSlotsInStation.vue'),
       meta: { requiresAuth: true }
     },
 
     {
       path: '/free/:blockName',
       name: 'free-block',
-      component: FreeBlock,
+      component: FreeSlotsInBlock,
       props: true,
       meta: { requiresAuth: true }
     },
@@ -77,14 +91,14 @@ const router = createRouter({
     {
       path: '/full',
       name: 'full',
-      component: () => import('@/views/Full.vue'),
+      component: () => import('@/views/station/FullSlotsInStation.vue'),
       meta: { requiresAuth: true }
     },
 
     {
       path: '/full/:blockName',
       name: 'full-block',
-      component: FullBlock,
+      component: FullSlotsInBlock,
       props: true,
       meta: { requiresAuth: true }
     },
@@ -93,13 +107,6 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login,
-      meta: { requiresGuest: true }
-    },
-
-    {
-      path: '/signup',
-      name: 'signup',
-      component: Signup,
       meta: { requiresGuest: true }
     },
 
@@ -113,10 +120,17 @@ const router = createRouter({
 
 const isAuthenticated = checkIfUserIsAuthenticated()
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!isAuthenticated) {
       next({ name: 'login' })
+    } else if (to.matched.some((record) => record.meta.requiresRoot)) {
+      const isRoot = await checkIfUserIsRoot()
+      if (isRoot) {
+        next()
+      } else {
+        next({ name: 'home' })
+      }
     } else {
       next()
     }

@@ -7,6 +7,20 @@ import InputText from 'primevue/inputtext'
 import { RouterLink } from 'vue-router'
 
 import ApiService from '@/api'
+import { useToast } from 'primevue/usetoast'
+import Toast from 'primevue/toast'
+
+const toast = useToast()
+const errorMessage = ref(null)
+
+const showErrorMessage = () => {
+  toast.add({
+    severity: 'error',
+    summary: 'Error',
+    detail: errorMessage.value,
+    life: 3000
+  })
+}
 
 const username = ref(null)
 const password = ref(null)
@@ -17,7 +31,8 @@ const login = async () => {
     try {
       data.value = await ApiService.login(username.value, password.value)
     } catch (error) {
-      console.log(error)
+      errorMessage.value = error.response.data.data
+      showErrorMessage()
     } finally {
       localStorage.setItem('token', data.value.data)
       localStorage.setItem('username', username.value)
@@ -30,6 +45,7 @@ const login = async () => {
 </script>
 
 <template>
+  <Toast />
   <div class="h-[100vh] flex justify-center items-center">
     <Card style="width: 25rem">
       <template #title>Login</template>

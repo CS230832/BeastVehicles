@@ -1,32 +1,33 @@
 <script setup>
-import Card from 'primevue/card'
-import InputText from 'primevue/inputtext'
-import Button from 'primevue/button'
-
-import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
-
 import { ref } from 'vue'
 import ApiService from '@/api'
 
+import Toast from 'primevue/toast'
+import Card from 'primevue/card'
+import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
+import { useToast } from 'primevue/usetoast'
+
 const toast = useToast()
 
+const errorMessage = ref(null)
 const showErrorMessage = () => {
   toast.add({
     severity: 'error',
     summary: 'Error',
-    detail: `Error finding vehicle`,
+    detail: errorMessage.value,
     life: 3000
   })
 }
 
 const data = ref(null)
-const wincode = ref('')
+const wincode = ref(null)
 
 const findVehicle = async () => {
   try {
-    data.value = await ApiService.findVehicle(wincode.value) // I am here
+    data.value = await ApiService.findVehicle(wincode.value)
   } catch (error) {
+    errorMessage.value = error.response.data.data
     showErrorMessage()
   }
 }
@@ -38,9 +39,7 @@ const findVehicle = async () => {
     <Card>
       <template #title>Search for a vehicle</template>
       <template #content>
-        <form>
-          <InputText placeholder="Enter wincode" v-model="wincode" />
-        </form>
+        <InputText placeholder="Enter wincode" v-model="wincode" />
       </template>
       <template #footer>
         <Button icon="pi pi-search" label="Search" @click="findVehicle" />

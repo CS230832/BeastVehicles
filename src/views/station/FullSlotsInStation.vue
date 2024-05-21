@@ -10,31 +10,47 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const toast = useToast()
 
+const errorMessage = ref(null)
 const showErrorMessage = () => {
   toast.add({
     severity: 'error',
     summary: 'Error',
-    detail: `Error fetching free slots`,
+    detail: errorMessage.value,
     life: 3000
   })
 }
 
+const getStationName = async () => {
+  try {
+    const response = await ApiService.getUser(
+      localStorage.getItem('username'),
+      localStorage.getItem('token')
+    )
+
+    return response.data.parking
+  } catch (error) {
+    console.log(`Error getting station name: ${error.response.data.data}`)
+  }
+}
+
 const data = ref(null)
 
-const getFreeBlocks = async () => {
+const getFullBlocks = async () => {
   try {
-    data.value = await ApiService.getFreeBlocks('Test Station')
+    const response = await ApiService.getFullBlocks(await getStationName())
+    data.value = response.data
   } catch (error) {
+    errorMessage.value = error.response.data.data
     showErrorMessage()
   }
 }
 
 const navigateToBlock = (blockName) => {
-  router.push({ name: 'free-block', params: { blockName } })
+  router.push({ name: 'full-block', params: { blockName } })
 }
 
 onMounted(() => {
-  getFreeBlocks()
+  getFullBlocks()
 })
 </script>
 
@@ -53,7 +69,7 @@ onMounted(() => {
         </h1></template
       >
       <template #content>
-        <p class="text-center font-semibold">{{ slots.length }}/50</p>
+        <p class="text-center font-semibold">{{ slots ? slots.length : 0 }}/50</p>
       </template>
     </Card>
   </div>

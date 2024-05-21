@@ -1,12 +1,12 @@
 <script setup>
+import { ref } from 'vue'
+import ApiService from '@/api'
+
+import Toast from 'primevue/toast'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
-
-import { ref } from 'vue'
-import ApiService from '@/api'
 
 const toast = useToast()
 
@@ -30,7 +30,7 @@ const showErrorMessage = () => {
   })
 }
 
-const wincode = ref('')
+const wincode = ref(null)
 const data = ref(null)
 
 const addVehicle = async () => {

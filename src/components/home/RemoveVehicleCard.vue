@@ -1,12 +1,12 @@
 <script setup>
+import { ref } from 'vue'
+import ApiService from '@/api'
+
+import Toast from 'primevue/toast'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
-
-import { ref } from 'vue'
-import ApiService from '@/api'
 
 const toast = useToast()
 
@@ -14,10 +14,12 @@ const showSuccessMessage = () => {
   toast.add({
     severity: 'success',
     summary: 'Success',
-    detail: 'Station successfully removed',
+    detail: 'Vehicle successfully removed',
     life: 3000
   })
 }
+
+const errorMessage = ref(null)
 
 const showErrorMessage = () => {
   toast.add({
@@ -28,15 +30,14 @@ const showErrorMessage = () => {
   })
 }
 
-const name = ref(null)
-const errorMessage = ref(null)
+const wincode = ref(null)
 
-const removeStation = async () => {
+const removeVehicle = async () => {
   try {
-    await ApiService.removeStation(name.value, localStorage.getItem('token'))
+    await ApiService.removeVehicle(wincode.value, localStorage.getItem('token'))
     showSuccessMessage()
   } catch (error) {
-    errorMessage.value = error
+    errorMessage.value = error.response.data.data
     showErrorMessage()
   }
 }
@@ -44,14 +45,14 @@ const removeStation = async () => {
 
 <template>
   <Toast />
-  <div class="p-4 flex flex-col gap-5">
+  <div class="p-4">
     <Card>
-      <template #title>Remove station</template>
+      <template #title>Remove a vehicle</template>
       <template #content>
-        <InputText type="text" placeholder="Enter station name" v-model="name" />
+        <InputText type="text" placeholder="Enter wincode" v-model="wincode" />
       </template>
       <template #footer>
-        <Button icon="pi pi-minus-circle" label="Remove" @click="removeStation" />
+        <Button icon="pi pi-trash" label="Remove" severity="danger" @click="removeVehicle" />
       </template>
     </Card>
   </div>

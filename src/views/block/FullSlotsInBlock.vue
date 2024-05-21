@@ -7,11 +7,12 @@ import Card from 'primevue/card'
 
 const toast = useToast()
 
+const errorMessage = ref(null)
 const showErrorMessage = () => {
   toast.add({
     severity: 'error',
     summary: 'Error',
-    detail: `Error fetching slots`,
+    detail: errorMessage.value,
     life: 3000
   })
 }
@@ -20,13 +21,28 @@ const props = defineProps({
   blockName: String
 })
 
-const data = ref([])
-const slots = ref(Array.from({ length: 50 }, (_, index) => index))
+const data = ref({})
+const slots = ref(Array.from({ length: 50 }, (_, index) => index + 1))
+
+const getStationName = async () => {
+  try {
+    const response = await ApiService.getUser(
+      localStorage.getItem('username'),
+      localStorage.getItem('token')
+    )
+
+    return response.data.parking
+  } catch (error) {
+    console.log(`Error getting station name: ${error.response.data.data}`)
+  }
+}
 
 const getFullSlots = async () => {
   try {
-    data.value = await ApiService.getFullSlots('Test Station', props.blockName)
+    const response = await ApiService.getFullSlots(await getStationName(), props.blockName)
+    data.value = response.data
   } catch (error) {
+    errorMessage.value = error.response.data.data
     showErrorMessage()
   }
 }
@@ -36,11 +52,13 @@ onMounted(() => {
 })
 
 const isSlotFull = (slot) => {
-  return data.value.some((item) => item.slot === slot)
+  const slotsInBlock = data.value[props.blockName]
+  return slotsInBlock && slotsInBlock.some((item) => item.slot === slot)
 }
 
 const getSlotWincode = (slot) => {
-  const slotData = data.value.find((item) => item.slot === slot)
+  const slotsInBlock = data.value[props.blockName]
+  const slotData = slotsInBlock.find((item) => item.slot === slot)
   return slotData ? slotData.wincode : ''
 }
 </script>
@@ -52,11 +70,11 @@ const getSlotWincode = (slot) => {
       v-for="slot in slots"
       :key="slot"
       :class="{ full: isSlotFull(slot), 'not-full': !isSlotFull(slot) }"
-      class="w-24"
+      class="w-40"
     >
       <template #content>
         <p class="text-center font-semibold">
-          {{ isSlotFull(slot) ? getSlotWincode(slot) : 'free' }}
+          {{ isSlotFull(slot) ? getSlotWincode(slot) : slot }}
         </p>
       </template>
     </Card>
