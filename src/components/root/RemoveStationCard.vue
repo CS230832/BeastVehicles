@@ -39,6 +39,8 @@ const removeStation = async () => {
   } catch (error) {
     errorMessage.value = error.response.data.data
     showErrorMessage()
+  } finally {
+    name.value = null
   }
 }
 </script>

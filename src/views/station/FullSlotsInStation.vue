@@ -1,13 +1,18 @@
 <script setup>
-import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
-import Card from 'primevue/card'
-
-import { onMounted, ref } from 'vue'
-import ApiService from '@/api'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import ApiService from '@/api'
+import checkIfUserIsRoot from '../auth/checkRoot'
+import { useStationStore } from '@/stores'
+import Toast from 'primevue/toast'
+import RootInput from '@/components/root/RootInput.vue'
+import Card from 'primevue/card'
+import { useToast } from 'primevue/usetoast'
 
 const router = useRouter()
+const isRoot = ref(null)
+const store = useStationStore()
+const station = computed(() => store.station)
 const toast = useToast()
 
 const errorMessage = ref(null)
@@ -37,11 +42,14 @@ const data = ref(null)
 
 const getFullBlocks = async () => {
   try {
-    const response = await ApiService.getFullBlocks(await getStationName())
+    const response = await ApiService.getFullBlocks(
+      isRoot.value ? station.value : await getStationName()
+    )
     data.value = response.data
   } catch (error) {
     errorMessage.value = error.response.data.data
     showErrorMessage()
+    data.value = null
   }
 }
 
@@ -49,13 +57,29 @@ const navigateToBlock = (blockName) => {
   router.push({ name: 'full-block', params: { blockName } })
 }
 
-onMounted(() => {
-  getFullBlocks()
+onMounted(async () => {
+  isRoot.value = await checkIfUserIsRoot()
+  if (isRoot.value) {
+    watch(
+      station,
+      async (newStation) => {
+        if (newStation) {
+          await getFullBlocks()
+        }
+      },
+      { immediate: true }
+    )
+  } else {
+    await getFullBlocks()
+  }
 })
 </script>
 
 <template>
   <Toast />
+  <div v-if="isRoot" class="px-10 mt-10">
+    <RootInput />
+  </div>
   <div class="flex gap-10 flex-wrap items-center p-10" v-if="data">
     <Card
       v-for="(slots, blockName) in data"

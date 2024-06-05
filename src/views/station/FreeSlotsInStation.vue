@@ -1,21 +1,18 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue'
-import ApiService from '@/api'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-
+import ApiService from '@/api'
 import checkIfUserIsRoot from '../auth/checkRoot'
-
+import { useStationStore } from '@/stores'
 import Toast from 'primevue/toast'
+import RootInput from '@/components/root/RootInput.vue'
 import Card from 'primevue/card'
 import { useToast } from 'primevue/usetoast'
 
-import RootInput from './RootInput.vue'
-import { useStationStore } from '@/stores'
-
+const router = useRouter()
+const isRoot = ref(null)
 const store = useStationStore()
 const station = computed(() => store.station)
-
-const router = useRouter()
 const toast = useToast()
 
 const errorMessage = ref(null)
@@ -34,7 +31,6 @@ const getStationName = async () => {
       localStorage.getItem('username'),
       localStorage.getItem('token')
     )
-
     return response.data.parking
   } catch (error) {
     console.log(`Error getting station name: ${error.response.data.data}`)
@@ -45,9 +41,12 @@ const data = ref(null)
 
 const getFreeBlocks = async () => {
   try {
-    const response = await ApiService.getFreeBlocks(await getStationName())
+    const response = await ApiService.getFreeBlocks(
+      isRoot.value ? station.value : await getStationName()
+    )
     data.value = response.data
   } catch (error) {
+    data.value = null
     errorMessage.value = error.response.data.data
     showErrorMessage()
   }
@@ -57,11 +56,21 @@ const navigateToBlock = (blockName) => {
   router.push({ name: 'free-block', params: { blockName } })
 }
 
-const isRoot = ref(null)
-
 onMounted(async () => {
   isRoot.value = await checkIfUserIsRoot()
-  getFreeBlocks()
+  if (isRoot.value) {
+    watch(
+      station,
+      async (newStation) => {
+        if (newStation) {
+          await getFreeBlocks()
+        }
+      },
+      { immediate: true }
+    )
+  } else {
+    await getFreeBlocks()
+  }
 })
 </script>
 
@@ -69,7 +78,6 @@ onMounted(async () => {
   <Toast />
   <div v-if="isRoot" class="px-10 mt-10">
     <RootInput />
-    {{ station }}
   </div>
   <div class="flex gap-10 flex-wrap items-center p-10" v-if="data">
     <Card

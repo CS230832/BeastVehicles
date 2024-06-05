@@ -39,6 +39,8 @@ const removeVehicle = async () => {
   } catch (error) {
     errorMessage.value = error.response.data.data
     showErrorMessage()
+  } finally {
+    wincode.value = null
   }
 }
 </script>

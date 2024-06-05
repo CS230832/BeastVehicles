@@ -1,6 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import ApiService from '@/api'
+
+import checkIfUserIsRoot from '@/views/auth/checkRoot'
+import checkIfUserIsManager from '@/views/auth/checkManager'
 
 import Toast from 'primevue/toast'
 import Card from 'primevue/card'
@@ -8,6 +11,7 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 
+const isRootOrManager = ref(null)
 const toast = useToast()
 
 const showSuccessMessage = () => {
@@ -39,8 +43,20 @@ const removeUser = async () => {
   } catch (error) {
     errorMessage.value = error.response.data.data
     showErrorMessage()
+  } finally {
+    if (isRootOrManager.value && username.value === localStorage.getItem('username')) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('username')
+      location.reload()
+    } else {
+      username.value = null
+    }
   }
 }
+
+onMounted(async () => {
+  isRootOrManager.value = (await checkIfUserIsRoot()) || (await checkIfUserIsManager())
+})
 </script>
 
 <template>

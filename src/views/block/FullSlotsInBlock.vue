@@ -1,10 +1,18 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import Toast from 'primevue/toast'
+import { onMounted, ref, computed } from 'vue'
 import ApiService from '@/api'
-import { useToast } from 'primevue/usetoast'
-import Card from 'primevue/card'
+import checkIfUserIsRoot from '../auth/checkRoot'
+import { useStationStore } from '@/stores'
+import { useRouter } from 'vue-router'
 
+import Toast from 'primevue/toast'
+import Card from 'primevue/card'
+import { useToast } from 'primevue/usetoast'
+
+const isRoot = ref(null)
+const store = useStationStore()
+const station = computed(() => store.station)
+const router = useRouter()
 const toast = useToast()
 
 const errorMessage = ref(null)
@@ -17,9 +25,26 @@ const showErrorMessage = () => {
   })
 }
 
+const validBlockNames = ref(null)
+
+const getAllBlocks = async () => {
+  try {
+    const response = await ApiService.getAllBlocks(
+      isRoot.value ? station.value : await getStationName()
+    )
+    validBlockNames.value = response.data
+  } catch (error) {
+    console.log(`Error getting all blocks: ${error.response.data.data}`)
+  }
+}
+
 const props = defineProps({
   blockName: String
 })
+
+const isValidBlockName = () => {
+  return validBlockNames.value.hasOwnProperty.call(validBlockNames.value, props.blockName)
+}
 
 const data = ref({})
 const slots = ref(Array.from({ length: 50 }, (_, index) => index + 1))
@@ -39,17 +64,16 @@ const getStationName = async () => {
 
 const getFullSlots = async () => {
   try {
-    const response = await ApiService.getFullSlots(await getStationName(), props.blockName)
+    const response = await ApiService.getFullSlots(
+      isRoot.value ? station.value : await getStationName(),
+      props.blockName
+    )
     data.value = response.data
   } catch (error) {
     errorMessage.value = error.response.data.data
     showErrorMessage()
   }
 }
-
-onMounted(() => {
-  getFullSlots()
-})
 
 const isSlotFull = (slot) => {
   const slotsInBlock = data.value[props.blockName]
@@ -61,6 +85,16 @@ const getSlotWincode = (slot) => {
   const slotData = slotsInBlock.find((item) => item.slot === slot)
   return slotData ? slotData.wincode : ''
 }
+
+onMounted(async () => {
+  isRoot.value = await checkIfUserIsRoot()
+  await getAllBlocks()
+  if (isValidBlockName()) {
+    await getFullSlots()
+  } else {
+    router.replace('/not-found')
+  }
+})
 </script>
 
 <template>

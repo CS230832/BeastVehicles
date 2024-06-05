@@ -1,14 +1,12 @@
 <script setup>
 import { ref } from 'vue'
+import ApiService from '@/api'
+
+import Toast from 'primevue/toast'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
-
-import { RouterLink } from 'vue-router'
-
-import ApiService from '@/api'
 import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
 
 const toast = useToast()
 const errorMessage = ref(null)
@@ -27,19 +25,16 @@ const password = ref(null)
 const data = ref(null)
 
 const login = async () => {
-  if (username.value && password.value) {
-    try {
-      data.value = await ApiService.login(username.value, password.value)
-    } catch (error) {
-      errorMessage.value = error.response.data.data
-      showErrorMessage()
-    } finally {
-      localStorage.setItem('token', data.value.data)
-      localStorage.setItem('username', username.value)
-      location.reload()
-    }
-  } else {
-    console.log('Username or password cannot be empty')
+  try {
+    data.value = await ApiService.login(username.value, password.value)
+  } catch (error) {
+    password.value = null
+    errorMessage.value = error.response.data.data
+    showErrorMessage()
+  } finally {
+    localStorage.setItem('token', data.value.data)
+    localStorage.setItem('username', username.value)
+    location.reload()
   }
 }
 </script>
@@ -71,13 +66,7 @@ const login = async () => {
         </form>
       </template>
       <template #footer>
-        <div class="flex justify-between items-center">
-          <p class="text-sm">
-            Don't have an account?
-            <RouterLink to="/signup" class="text-blue-500 underline">Sign Up</RouterLink>
-          </p>
-          <Button label="Login" @click="login" />
-        </div>
+        <Button label="Login" @click="login" />
       </template>
     </Card>
   </div>

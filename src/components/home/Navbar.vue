@@ -1,15 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import router from '@/router'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import ApiService from '@/api'
 import checkIfUserIsAuthenticated from '@/views/auth/checkAuth'
 import checkIfUserIsRoot from '@/views/auth/checkRoot'
+import checkIfUserIsManager from '@/views/auth/checkManager'
 
 import Menubar from 'primevue/menubar'
 import Button from 'primevue/button'
 import Menu from 'primevue/menu'
 import Badge from 'primevue/badge'
 import Avatar from 'primevue/avatar'
+
+const router = useRouter()
 
 const logout = async () => {
   if (checkIfUserIsAuthenticated()) {
@@ -116,6 +119,7 @@ const getUserDetails = async () => {
 
 onMounted(async () => {
   const isRoot = await checkIfUserIsRoot()
+  const isManager = await checkIfUserIsManager()
   if (isRoot) {
     navbarItems.value.push(
       {
@@ -132,6 +136,23 @@ onMounted(async () => {
           router.push('/remove-station')
         }
       },
+      {
+        label: 'Add User',
+        icon: 'pi pi-user-plus',
+        command: () => {
+          router.push('/add-user')
+        }
+      },
+      {
+        label: 'Remove User',
+        icon: 'pi pi-user-minus',
+        command: () => {
+          router.push('/remove-user')
+        }
+      }
+    )
+  } else if (isManager) {
+    navbarItems.value.push(
       {
         label: 'Add User',
         icon: 'pi pi-user-plus',

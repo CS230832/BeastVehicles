@@ -2,12 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import Login from '@/views/auth/Login.vue'
 import NotFound from '@/views/NotFound.vue'
-
 import FreeSlotsInBlock from '@/views/block/FreeSlotsInBlock.vue'
 import FullSlotsInBlock from '@/views/block/FullSlotsInBlock.vue'
-
 import checkIfUserIsAuthenticated from '@/views/auth/checkAuth'
 import checkIfUserIsRoot from '@/views/auth/checkRoot'
+import checkIfUserIsManager from '@/views/auth/checkManager'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,14 +55,14 @@ const router = createRouter({
       path: '/add-user',
       name: 'add-user',
       component: () => import('@/components/root/AddUserCard.vue'),
-      meta: { requiresAuth: true, requiresRoot: true }
+      meta: { requiresAuth: true, requiresManagerOrRoot: true }
     },
 
     {
       path: '/remove-user',
       name: 'remove-user',
       component: () => import('@/components/root/RemoveUserCard.vue'),
-      meta: { requiresAuth: true, requiresRoot: true }
+      meta: { requiresAuth: true, requiresManagerOrRoot: true }
     },
 
     {
@@ -124,15 +123,24 @@ router.beforeEach(async (to, from, next) => {
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!isAuthenticated) {
       next({ name: 'login' })
-    } else if (to.matched.some((record) => record.meta.requiresRoot)) {
-      const isRoot = await checkIfUserIsRoot()
-      if (isRoot) {
-        next()
-      } else {
-        next({ name: 'home' })
-      }
     } else {
-      next()
+      const isRoot = await checkIfUserIsRoot()
+      if (to.matched.some((record) => record.meta.requiresRoot)) {
+        if (isRoot) {
+          next()
+        } else {
+          next({ name: 'home' })
+        }
+      } else if (to.matched.some((record) => record.meta.requiresManagerOrRoot)) {
+        const isManager = await checkIfUserIsManager()
+        if (isRoot || isManager) {
+          next()
+        } else {
+          next({ name: 'home' })
+        }
+      } else {
+        next()
+      }
     }
   } else if (to.matched.some((record) => record.meta.requiresGuest)) {
     if (isAuthenticated) {

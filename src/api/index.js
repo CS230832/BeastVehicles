@@ -102,7 +102,7 @@ const ApiService = {
       const response = await axios.post(`${API_URL}/vehicles/set/info`, wincodes)
       return response.data
     } catch (error) {
-      console.error('Error finding vehicle:', error)
+      console.error('Error finding vehicle: ', error)
       throw error
     }
   },
@@ -209,7 +209,7 @@ const ApiService = {
       const response = await axios.post(`${API_URL}/users/login`, { username, password })
       return response.data
     } catch (error) {
-      console.error('Error logging in:', error)
+      console.error('Error logging in: ', error)
       throw error
     }
   },
@@ -226,7 +226,7 @@ const ApiService = {
         }
       )
     } catch (error) {
-      console.error('Error loggin out:', error)
+      console.error('Error loggin out: ', error)
       throw error
     }
   },

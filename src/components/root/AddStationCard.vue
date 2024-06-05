@@ -46,6 +46,10 @@ const addStation = async () => {
   } catch (error) {
     errorMessage.value = error.response.data.data
     showErrorMessage()
+  } finally {
+    name.value = null
+    region.value = null
+    capacity.value = null
   }
 }
 </script>

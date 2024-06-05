@@ -30,8 +30,8 @@ const showErrorMessage = () => {
   })
 }
 
-const wincode = ref(null)
 const data = ref(null)
+const wincode = ref(null)
 
 const addVehicle = async () => {
   try {

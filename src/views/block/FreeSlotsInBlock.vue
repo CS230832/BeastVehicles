@@ -1,12 +1,18 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import ApiService from '@/api'
-import router from '@/router'
+import checkIfUserIsRoot from '../auth/checkRoot'
+import { useStationStore } from '@/stores'
+import { useRouter } from 'vue-router'
 
 import Toast from 'primevue/toast'
 import Card from 'primevue/card'
 import { useToast } from 'primevue/usetoast'
 
+const isRoot = ref(null)
+const store = useStationStore()
+const station = computed(() => store.station)
+const router = useRouter()
 const toast = useToast()
 
 const errorMessage = ref(null)
@@ -23,7 +29,9 @@ const validBlockNames = ref(null)
 
 const getAllBlocks = async () => {
   try {
-    const response = await ApiService.getAllBlocks(await getStationName())
+    const response = await ApiService.getAllBlocks(
+      isRoot.value ? station.value : await getStationName()
+    )
     validBlockNames.value = response.data
   } catch (error) {
     console.log(`Error getting all blocks: ${error.response.data.data}`)
@@ -56,9 +64,10 @@ const getStationName = async () => {
 
 const getFreeSlots = async () => {
   try {
-    const response = await ApiService.getFreeSlots(await getStationName(), props.blockName)
-    console.log(response.data)
-
+    const response = await ApiService.getFreeSlots(
+      isRoot.value ? station.value : await getStationName(),
+      props.blockName
+    )
     freeSlots.value = response.data[props.blockName] || []
   } catch (error) {
     errorMessage.value = error.response.data.data
@@ -71,9 +80,10 @@ const slotIsFree = (slot) => {
 }
 
 onMounted(async () => {
+  isRoot.value = await checkIfUserIsRoot()
   await getAllBlocks()
   if (isValidBlockName()) {
-    getFreeSlots()
+    await getFreeSlots()
   } else {
     router.replace('/not-found')
   }
