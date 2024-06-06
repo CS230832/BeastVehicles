@@ -19,15 +19,13 @@ const router = createRouter({
     {
       path: '/home',
       name: 'home',
-      component: Home,
-      meta: { requiresAuth: true }
+      component: Home
     },
 
     {
       path: '/search',
       name: 'search',
-      component: () => import('@/components/home/SearchVehicleCard.vue'),
-      meta: { requiresAuth: true }
+      component: () => import('@/components/home/SearchVehicleCard.vue')
     },
 
     {

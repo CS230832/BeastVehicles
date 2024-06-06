@@ -6,27 +6,42 @@ import checkIfUserIsAuthenticated from '@/views/auth/checkAuth'
 import checkIfUserIsRoot from '@/views/auth/checkRoot'
 import checkIfUserIsManager from '@/views/auth/checkManager'
 
+import Toast from 'primevue/toast'
 import Menubar from 'primevue/menubar'
 import Button from 'primevue/button'
 import Menu from 'primevue/menu'
 import Badge from 'primevue/badge'
 import Avatar from 'primevue/avatar'
+import { useToast } from 'primevue/usetoast'
 
+const toast = useToast()
 const router = useRouter()
+
+const errorMessage = ref(null)
+const showErrorMessage = () => {
+  toast.add({
+    severity: 'error',
+    summary: 'Error',
+    detail: errorMessage.value,
+    life: 3000
+  })
+}
 
 const logout = async () => {
   if (checkIfUserIsAuthenticated()) {
     try {
       await ApiService.logout(localStorage.getItem('token'))
     } catch (error) {
-      console.log(error)
+      errorMessage.value = error.response.data.data
+      showErrorMessage()
     } finally {
       localStorage.removeItem('token')
       localStorage.removeItem('username')
       location.reload()
     }
   } else {
-    console.log('Something went wrong')
+    errorMessage.value = 'Something went wrong'
+    showErrorMessage()
   }
 }
 
@@ -40,42 +55,10 @@ const navbarItems = ref([
   },
 
   {
-    label: 'New Vehicle',
-    icon: 'pi pi-car',
-    command: () => {
-      router.push('/add')
-    }
-  },
-
-  {
     label: 'Find Vehicle',
     icon: 'pi pi-search',
     command: () => {
       router.push('/search')
-    }
-  },
-
-  {
-    label: 'Remove Vehicle',
-    icon: 'pi pi-trash',
-    command: () => {
-      router.push('/remove')
-    }
-  },
-
-  {
-    label: 'Free Slots',
-    icon: 'pi pi-circle',
-    command: () => {
-      router.push('/free')
-    }
-  },
-
-  {
-    label: 'Full Slots',
-    icon: 'pi pi-circle-fill',
-    command: () => {
-      router.push('/full')
     }
   }
 ])
@@ -118,8 +101,46 @@ const getUserDetails = async () => {
 }
 
 onMounted(async () => {
+  const isAuth = checkIfUserIsAuthenticated()
   const isRoot = await checkIfUserIsRoot()
   const isManager = await checkIfUserIsManager()
+
+  if (isAuth) {
+    navbarItems.value.push(
+      {
+        label: 'New Vehicle',
+        icon: 'pi pi-car',
+        command: () => {
+          router.push('/add')
+        }
+      },
+
+      {
+        label: 'Remove Vehicle',
+        icon: 'pi pi-trash',
+        command: () => {
+          router.push('/remove')
+        }
+      },
+
+      {
+        label: 'Free Slots',
+        icon: 'pi pi-circle',
+        command: () => {
+          router.push('/free')
+        }
+      },
+
+      {
+        label: 'Full Slots',
+        icon: 'pi pi-circle-fill',
+        command: () => {
+          router.push('/full')
+        }
+      }
+    )
+  }
+
   if (isRoot) {
     navbarItems.value.push(
       {
@@ -169,13 +190,17 @@ onMounted(async () => {
       }
     )
   }
-  getUserDetails()
+
+  if (isAuth) {
+    await getUserDetails()
+  }
 })
 </script>
 
 <template>
+  <Toast />
   <Menubar :model="navbarItems">
-    <template #end>
+    <template #end v-if="checkIfUserIsAuthenticated()">
       <Button
         type="button"
         icon="pi pi-user"
@@ -202,7 +227,7 @@ onMounted(async () => {
         </template>
         <template #end>
           <div class="w-full flex items-center p-2 pl-3 text-surface-700 dark:text-surface-0/80">
-            <Avatar image="/amyelsner.png" class="mr-2" shape="circle" />
+            <Avatar image="/user.png" class="mr-2" shape="circle" />
             <span class="inline-flex flex-col justify-start">
               <span class="font-bold">{{ username }}</span>
               <span class="text-sm flex items-center gap-1"
@@ -213,6 +238,18 @@ onMounted(async () => {
           </div>
         </template>
       </Menu>
+    </template>
+
+    <template #end v-else>
+      <Button
+        type="button"
+        label="Login"
+        @click="
+          () => {
+            router.push('/login')
+          }
+        "
+      />
     </template>
   </Menubar>
 </template>

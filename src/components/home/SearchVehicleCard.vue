@@ -50,9 +50,9 @@ const findVehicle = async () => {
       <template #title> Vehicle's location </template>
 
       <template #content>
-        <p class="font-semibold">Station: {{ data.parking }}</p>
-        <p class="font-semibold">Block: {{ data.block }}</p>
-        <p class="font-semibold">Slot: {{ data.slot }}</p>
+        <p class="font-semibold">Station: {{ data.data.parking }}</p>
+        <p class="font-semibold">Block: {{ data.data.block }}</p>
+        <p class="font-semibold">Slot: {{ data.data.slot }}</p>
       </template>
     </Card>
   </div>
