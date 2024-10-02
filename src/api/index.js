@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = 'http://localhost:8080/api/v1'
+const API_URL = 'http://34.116.153.43:8080/api/v1'
 
 const ApiService = {
   addStation: async (name, region, capacity, token) => {
@@ -72,7 +72,7 @@ const ApiService = {
     try {
       const response = await axios.post(
         `${API_URL}/vehicles/set/register`,
-        wincodes,
+        { wincodes },
 
         {
           headers: {
@@ -82,7 +82,7 @@ const ApiService = {
       )
       return response.data
     } catch (error) {
-      console.error('Error adding vehicles: ', error)
+      console.error('Error adding multiple vehicles: ', error)
       throw error
     }
   },
@@ -129,7 +129,7 @@ const ApiService = {
     try {
       const response = await axios.delete(
         `${API_URL}/vehicles/set/delete`,
-        wincodes,
+        { wincodes },
 
         {
           headers: {
@@ -139,7 +139,7 @@ const ApiService = {
       )
       return response.data
     } catch (error) {
-      console.error('Error removing vehicle: ', error)
+      console.error('Error removing multiple vehicles: ', error)
       throw error
     }
   },
